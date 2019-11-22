@@ -1,72 +1,86 @@
 package taskmanager
 
 import (
-	"sync/atomic"
+	"fmt"
+	"sync"
 	"time"
 )
 
 // Воркер для обработки задач
 type WorkerPool struct {
-	tm              *Queue
-	countGoroutines int           // количество горутин в которых обрабатываются задачи (количество одновременно обрабатываемых задач)
-	periodicity     time.Duration // частота с которой воркер проверяет есть ли задачи в очереди
-	quitCh          chan struct{} // канал для остановки пула воркеров
+	tm          *Queue
+	wg          sync.WaitGroup
+	maxWorkers  int                // количество воркеров
+	periodicity time.Duration      // частота с которой воркер пул проверяет есть ли задачи в очереди
+	closeTaskCh chan struct{}      // канал для остановки пула воркеров
+	taskCh      chan TaskInterface // канал с поступающими задачами
+	quit        chan struct{}      // канал, после получения сигнала прекращает работу
 }
 
 // Конструктор для воркера задач
-func NewWorkerPool(tm *Queue, countGoroutines int, periodicity time.Duration) *WorkerPool {
+func NewWorkerPool(tm *Queue, maxWorkers int, periodicity time.Duration) *WorkerPool {
 	return &WorkerPool{
-		tm:              tm,
-		countGoroutines: countGoroutines,
-		periodicity:     periodicity,
-		quitCh:          make(chan struct{}),
+		tm:          tm,
+		maxWorkers:  maxWorkers,
+		periodicity: periodicity,
+		closeTaskCh: make(chan struct{}),
+		taskCh:      make(chan TaskInterface),
+		quit:        make(chan struct{}),
 	}
 }
 
 // Запуск воркера для работы
 func (w *WorkerPool) Run() {
-	// канал для отправки задач горутинам
-	// канал небуферизирован чтоб получать только актуальную задачу
-	tasker := make(chan TaskInterface)
+	// заполняем канал задачами с определенной периодичностью, дабы не положить проц
 	go func() {
-		for range time.Tick(w.periodicity) {
-			if task := w.tm.GetTask(); task != nil {
-				tasker <- task
+		ticker := time.NewTicker(w.periodicity)
+		for {
+			select {
+			case <-w.closeTaskCh:
+				close(w.taskCh)
+				return
+			case <-ticker.C:
+				w.taskCh <- w.tm.GetTask()
 			}
 		}
 	}()
 
-	// ограничиваем количество горутин чтоб не положить проц при большом количестве задач
-	limiter := make(chan struct{}, w.countGoroutines)
+	// запускаем пул воркеров
+	w.wg.Add(w.maxWorkers)
+	for i := 0; i < w.maxWorkers; i++ {
+		go w.work()
+	}
+	<-w.quit
+}
 
-	// количество задач находящихся в работе
-	var countTasks int64
-loop:
-	for {
-		select {
-		case task := <-tasker:
-			limiter <- struct{}{}
-			atomic.AddInt64(&countTasks, 1)
-			go func() {
-				task.Exec()
-				atomic.AddInt64(&countTasks, -1)
-				<-limiter
-			}()
-		case <-w.quitCh:
-			w.periodicity = time.Hour * 24 // увеличиваем частоту чтоб больше не доставать задачи из очереди
-			for {
-				//ждем когда выполнятся все задачи
-				if atomic.LoadInt64(&countTasks) == 0 {
-					// завершаем работу всего цикла
-					break loop
-				}
-			}
+func (w *WorkerPool) work() {
+	for task := range w.taskCh {
+		if task != nil {
+			task.Exec()
 		}
 	}
+	w.wg.Done()
 }
 
 // плавная остановка воркера
 // воркер не остановится пока не выполнит все недоработанные задачи
-func (w *WorkerPool) Stop() {
-	w.quitCh <- struct{}{}
+// или не истечет тайм аут
+func (w *WorkerPool) Shutdown(timeout time.Duration) error {
+	// закрываем канал с задачами
+	w.closeTaskCh <- struct{}{}
+	// если воркеры закончили работу и остановились отправляем сообщени в канал ok
+	ok := make(chan struct{})
+	go func() {
+		w.wg.Wait()
+		ok <- struct{}{}
+	}()
+
+	select {
+	case <-ok:
+		close(w.quit)
+		return nil
+	case <-time.After(timeout):
+		close(w.quit)
+		return fmt.Errorf(`timeout`)
+	}
 }
