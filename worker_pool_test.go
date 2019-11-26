@@ -48,8 +48,6 @@ func TestWorkerPool_Shutdown(t *testing.T) {
 	q := new(Queue)
 
 	testTask := NewTask(HighestPriority, func() error {
-		// добавляем атомарно в счетчик выполненую работу
-		// чтобы избежать data race condition
 		time.Sleep(time.Second * 10)
 		return nil
 	})

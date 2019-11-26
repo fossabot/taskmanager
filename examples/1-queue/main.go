@@ -23,7 +23,6 @@ func main() {
 	lTask.OnEvent(taskmanager.AfterExecEvent, func() {
 		fmt.Println("i lowest! i after execution!")
 	})
-	// вызываем событие создания новой задачи
 	lTask.EmitEvent(taskmanager.CreatedEvent)
 	tq.AddTask(lTask)
 
@@ -41,6 +40,7 @@ func main() {
 	hTask.OnEvent(taskmanager.AfterExecEvent, func() {
 		fmt.Println("i highest! i after execution!")
 	})
+	hTask.EmitEvent(taskmanager.CreatedEvent)
 	tq.AddTask(hTask)
 
 	mTask := taskmanager.NewTask(taskmanager.MiddlePriority, func() error {

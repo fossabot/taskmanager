@@ -8,24 +8,24 @@ import (
 
 // Воркер для обработки задач
 type WorkerPool struct {
-	tm          *Queue
-	wg          sync.WaitGroup
-	maxWorkers  int                // количество воркеров
-	periodicity time.Duration      // частота с которой воркер пул проверяет есть ли задачи в очереди
-	closeTaskCh chan struct{}      // канал для остановки пула воркеров
-	taskCh      chan TaskInterface // канал с поступающими задачами
-	quit        chan struct{}      // канал, после получения сигнала прекращает работу
+	tm                *Queue
+	wg                sync.WaitGroup
+	maxWorkers        int                // количество воркеров
+	periodicityTicker *time.Ticker       // частота с которой воркер пул проверяет есть ли задачи в очереди
+	closeTaskCh       chan struct{}      // канал для остановки пула воркеров
+	taskCh            chan TaskInterface // канал с поступающими задачами
+	quit              chan struct{}      // канал, после получения сигнала прекращает работу
 }
 
 // Конструктор для воркера задач
 func NewWorkerPool(tm *Queue, maxWorkers int, periodicity time.Duration) *WorkerPool {
 	return &WorkerPool{
-		tm:          tm,
-		maxWorkers:  maxWorkers,
-		periodicity: periodicity,
-		closeTaskCh: make(chan struct{}),
-		taskCh:      make(chan TaskInterface),
-		quit:        make(chan struct{}),
+		tm:                tm,
+		maxWorkers:        maxWorkers,
+		periodicityTicker: time.NewTicker(periodicity),
+		closeTaskCh:       make(chan struct{}),
+		taskCh:            make(chan TaskInterface),
+		quit:              make(chan struct{}),
 	}
 }
 
@@ -33,14 +33,15 @@ func NewWorkerPool(tm *Queue, maxWorkers int, periodicity time.Duration) *Worker
 func (w *WorkerPool) Run() {
 	// заполняем канал задачами с определенной периодичностью, дабы не положить проц
 	go func() {
-		ticker := time.NewTicker(w.periodicity)
 		for {
 			select {
 			case <-w.closeTaskCh:
 				close(w.taskCh)
 				return
-			case <-ticker.C:
-				w.taskCh <- w.tm.GetTask()
+			case <-w.periodicityTicker.C:
+				if task := w.tm.GetTask(); task != nil {
+					w.taskCh <- task
+				}
 			}
 		}
 	}()
@@ -55,9 +56,7 @@ func (w *WorkerPool) Run() {
 
 func (w *WorkerPool) work() {
 	for task := range w.taskCh {
-		if task != nil {
-			task.Exec()
-		}
+		task.Exec()
 	}
 	w.wg.Done()
 }

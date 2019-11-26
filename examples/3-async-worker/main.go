@@ -14,9 +14,10 @@ func main() {
 	// имитируем асинхронное добавление задач
 	stopAddTasks := make(chan struct{})
 	go func() {
+		ticker := time.NewTicker(time.Millisecond * 100)
 		for {
 			select {
-			case <-time.Tick(time.Millisecond * 100):
+			case <-ticker.C:
 				task := taskmanager.NewTask(taskmanager.HighestPriority, func() error {
 					time.Sleep(time.Second * 5)
 					fmt.Println("i highest! good work!")
