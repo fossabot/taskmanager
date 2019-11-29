@@ -1,6 +1,5 @@
-# https://github.com/golangci/golangci-lint
-name: golangci-lint
-on: [push, pull_request]
+name: push
+on: [push]
 jobs:
   golangci-lint:
     runs-on: ubuntu-latest
@@ -13,5 +12,8 @@ jobs:
     - name: install golangci-lint
       run: curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s -- -b $(go env GOPATH)/bin v1.21.0
 
-    - name: run golangci-lint
+    - name: golangci-lint
       run: $(go env GOPATH)/bin/golangci-lint run
+
+    - name: test
+      run: make test
