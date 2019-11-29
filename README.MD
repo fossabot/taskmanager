@@ -1,6 +1,3 @@
-[![Lint Status](https://github.com/Delgus/taskmanager/workflows/golangci-lint/badge.svg)](https://github.com/Delgus/taskmanager/actions)
-
-
 ### TASK MANAGER
 Вот сама задача:  
 Реализовать систему очередей задач (библиотекой).  
