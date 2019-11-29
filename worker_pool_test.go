@@ -13,7 +13,7 @@ func TestWorkerPool(t *testing.T) {
 
 	var workCounter int64
 
-	var countTasks = 5 //количество задач
+	var countTasks = 5 // количество задач
 
 	testTask := NewTask(HighestPriority, func() error {
 		// добавляем атомарно в счетчик выполненую работу

@@ -9,7 +9,7 @@ import (
 type Priority int
 
 const (
-	//Приоритеты задач
+	// Приоритеты задач
 	LowestPriority  Priority = 1 // самый низкий
 	LowPriority     Priority = 2 // низкий
 	MiddlePriority  Priority = 3 // средний

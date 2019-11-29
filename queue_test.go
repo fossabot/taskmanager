@@ -32,7 +32,7 @@ func BenchmarkGetTask(b *testing.B) {
 	}
 }
 
-//тест на выполнение задач по приоритету
+// тест на выполнение задач по приоритету
 func TestPriority(t *testing.T) {
 	tasks := []*Task{
 		NewTask(HighestPriority, func() error { return nil }),
