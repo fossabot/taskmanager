@@ -1,3 +1,5 @@
+[![codecov](https://codecov.io/gh/Delgus/taskmanager/branch/master/graph/badge.svg)](https://codecov.io/gh/Delgus/taskmanager)
+
 ### TASK MANAGER
 Вот сама задача:  
 Реализовать систему очередей задач (библиотекой).  
