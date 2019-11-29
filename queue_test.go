@@ -80,7 +80,6 @@ func TestPriority(t *testing.T) {
 	if priority != LowestPriority {
 		t.Errorf(`unexpected priority: expect %d get %d"`, LowestPriority, priority)
 	}
-
 }
 
 // Если очередь пуста метод GetTask должен вернуть nil
