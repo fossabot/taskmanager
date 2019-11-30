@@ -9,7 +9,6 @@ import (
 type Priority int
 
 const (
-	// Приоритеты задач
 	// LowestPriority - самый низкий
 	LowestPriority Priority = 1
 	// LowPriority - низкий
@@ -38,7 +37,7 @@ type QueueInterface interface {
 	GetTask() TaskInterface
 }
 
-// TaskQueue реализует очередь с прироритетом
+// Queue реализует очередь с прироритетом
 type Queue struct {
 	queue queue
 	mu    sync.Mutex

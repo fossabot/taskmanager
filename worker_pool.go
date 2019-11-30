@@ -31,9 +31,9 @@ func NewWorkerPool(tm *Queue, maxWorkers int, periodicity time.Duration) *Worker
 	}
 }
 
-// Запуск воркера для работы
+// Run - запуск воркера для работы
 func (w *WorkerPool) Run() {
-	// заполняем канал задачами с определенной периодичностью, дабы не положить проц
+	// заполняем канал задачами с определенной периодичностью
 	go func() {
 		for {
 			select {

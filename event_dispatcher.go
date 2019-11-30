@@ -7,7 +7,6 @@ type Event string
 type EventHandler func()
 
 const (
-	// События
 	// CreatedEvent - создание
 	CreatedEvent Event = "created"
 	// BeforeExecEvent - начало выполнения
