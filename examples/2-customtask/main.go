@@ -14,7 +14,7 @@ type CustomTask struct {
 	isFailed bool
 }
 
-// CustomTask - конструктор для пользовательского класса
+// NewCustomTask - конструктор для пользовательского класса
 func NewCustomTask(isFailed bool) *CustomTask {
 	task := &CustomTask{
 		isFailed: isFailed,
@@ -22,10 +22,12 @@ func NewCustomTask(isFailed bool) *CustomTask {
 	return task
 }
 
+// Priority - реализует TaskInterface
 func (t *CustomTask) Priority() taskmanager.Priority {
 	return taskmanager.HighestPriority
 }
 
+// Exec - реализует TaskInterface
 func (t *CustomTask) Exec() {
 	t.EmitEvent(taskmanager.BeforeExecEvent)
 	time.Sleep(time.Second * 1)

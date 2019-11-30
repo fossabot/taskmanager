@@ -5,16 +5,21 @@ import (
 	"sync"
 )
 
-// Тип для приоритетов
+// Priority - тип для приоритетов
 type Priority int
 
 const (
 	// Приоритеты задач
-	LowestPriority  Priority = 1 // самый низкий
-	LowPriority     Priority = 2 // низкий
-	MiddlePriority  Priority = 3 // средний
-	HighPriority    Priority = 4 // высокий
-	HighestPriority Priority = 5 // самый высокий
+	// LowestPriority - самый низкий
+	LowestPriority Priority = 1
+	// LowPriority - низкий
+	LowPriority Priority = 2
+	// MiddlePriority - средний
+	MiddlePriority Priority = 3
+	// HighPriority - высокий
+	HighPriority Priority = 4
+	// HighestPriority - самый высокий
+	HighestPriority Priority = 5
 )
 
 // TaskInterface - интерфейс, который должна реализовывать задача
@@ -25,7 +30,7 @@ type TaskInterface interface {
 	Exec()
 }
 
-// Интерфейс, который должна реализовывать очередь
+// QueueInterface - интерфейс, который должна реализовывать очередь
 type QueueInterface interface {
 	// AddTask - добавить задачу из очереди
 	AddTask(task TaskInterface)
@@ -46,7 +51,7 @@ func (q *Queue) AddTask(task TaskInterface) {
 	q.mu.Unlock()
 }
 
-// Получение задачи из канала очереди с блокировкой для безопасного извлечения в асинхронных потоках
+// GetTask - получение задачи из канала очереди с блокировкой для безопасного извлечения в асинхронных потоках
 func (q *Queue) GetTask() TaskInterface {
 	q.mu.Lock()
 	defer q.mu.Unlock()

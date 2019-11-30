@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// Воркер для обработки задач
+// WorkerPool - пул воркеров для обработки задач
 type WorkerPool struct {
 	tm                *Queue
 	wg                sync.WaitGroup
@@ -17,7 +17,9 @@ type WorkerPool struct {
 	quit              chan struct{}      // канал, после получения сигнала прекращает работу
 }
 
-// Конструктор для воркера задач
+// NewWorkerPool - конструктор для воркера задач
+// maxWorkers - количество воркеров в пуле
+// periodicity - частота с которой пул воркеров проверяет есть ли задачи в очереди
 func NewWorkerPool(tm *Queue, maxWorkers int, periodicity time.Duration) *WorkerPool {
 	return &WorkerPool{
 		tm:                tm,
@@ -61,13 +63,13 @@ func (w *WorkerPool) work() {
 	w.wg.Done()
 }
 
-// плавная остановка воркера
+// Shutdown - плавная остановка воркера
 // воркер не остановится пока не выполнит все недоработанные задачи
 // или не истечет тайм аут
 func (w *WorkerPool) Shutdown(timeout time.Duration) error {
 	// закрываем канал с задачами
 	w.closeTaskCh <- struct{}{}
-	// если воркеры закончили работу и остановились отправляем сообщени в канал ok
+	// если воркеры закончили работу и остановились отправляем сообщение в канал ok
 	ok := make(chan struct{})
 	go func() {
 		w.wg.Wait()

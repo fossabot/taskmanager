@@ -8,10 +8,14 @@ type EventHandler func()
 
 const (
 	// События
-	CreatedEvent    Event = "created"     // Создание
-	BeforeExecEvent Event = "before_exec" // Начало выполнения
-	AfterExecEvent  Event = "after_exec"  // Завершение выполнения
-	FailedEvent     Event = "failed"      // ошибка выполнения
+	// CreatedEvent - создание
+	CreatedEvent    Event = "created"
+	// BeforeExecEvent - начало выполнения
+	BeforeExecEvent Event = "before_exec"
+	// AfterExecEvent - завершение выполнения
+	AfterExecEvent  Event = "after_exec"
+	// FailedEvent - ошибка выполнения
+	FailedEvent     Event = "failed"
 )
 
 // EventDispatcherInterface - интерфейс, который должен реализовывать EventDispatcher
