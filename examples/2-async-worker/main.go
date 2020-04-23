@@ -7,10 +7,12 @@ import (
 	"time"
 
 	"github.com/delgus/taskmanager"
+	"github.com/delgus/taskmanager/memory"
+	"github.com/delgus/taskmanager/worker"
 )
 
 func main() {
-	q := new(taskmanager.Queue)
+	q := new(memory.Queue)
 	// имитируем асинхронное добавление задач
 	stopAddTasks := make(chan struct{})
 	go func() {
@@ -18,7 +20,7 @@ func main() {
 		for {
 			select {
 			case <-ticker.C:
-				task := taskmanager.NewTask(taskmanager.HighestPriority, func() error {
+				task := memory.NewTask(taskmanager.HighestPriority, func() error {
 					time.Sleep(time.Second * 5)
 					fmt.Println("i highest! good work!")
 					return nil
@@ -41,7 +43,7 @@ func main() {
 	}()
 
 	// обрабатываем задачи в 10 потоков
-	worker := taskmanager.NewWorkerPool(q, 10, time.Millisecond*50)
+	worker := worker.NewPool(q, 10, time.Millisecond*50)
 
 	// нажмите CTRL + C для остановки воркера
 	// плавная остановка воркера при получение interrupt сигнала

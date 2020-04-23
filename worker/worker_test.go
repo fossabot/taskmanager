@@ -1,21 +1,24 @@
-package taskmanager
+package worker
 
 import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/delgus/taskmanager"
+	"github.com/delgus/taskmanager/memory"
 )
 
 // воркер должен получить все задачи из очереди и вызвать у них обработчик
 func TestWorkerPool(t *testing.T) {
 	// новая очередь задач
-	q := new(Queue)
+	q := new(memory.Queue)
 
 	var workCounter int64
 
 	var countTasks = 5 // количество задач
 
-	testTask := NewTask(HighestPriority, func() error {
+	testTask := memory.NewTask(taskmanager.HighestPriority, func() error {
 		// добавляем атомарно в счетчик выполненую работу
 		// чтобы избежать data race condition
 		atomic.AddInt64(&workCounter, 1)
@@ -27,7 +30,7 @@ func TestWorkerPool(t *testing.T) {
 		q.AddTask(testTask)
 	}
 
-	worker := NewWorkerPool(q, 10, time.Millisecond)
+	worker := NewPool(q, 10, time.Millisecond)
 
 	go worker.Run()
 
@@ -45,14 +48,14 @@ func TestWorkerPool(t *testing.T) {
 
 func TestWorkerPool_Shutdown(t *testing.T) {
 	// новая очередь задач
-	q := new(Queue)
+	q := new(memory.Queue)
 
-	testTask := NewTask(HighestPriority, func() error {
+	testTask := memory.NewTask(taskmanager.HighestPriority, func() error {
 		time.Sleep(time.Second * 10)
 		return nil
 	})
 	q.AddTask(testTask)
-	workerPool := NewWorkerPool(q, 2, time.Millisecond)
+	workerPool := NewPool(q, 2, time.Millisecond)
 	go workerPool.Run()
 	time.Sleep(time.Second)
 	if err := workerPool.Shutdown(time.Second); err == nil {

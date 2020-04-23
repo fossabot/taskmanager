@@ -1,41 +1,10 @@
-package taskmanager
+package memory
 
 import (
-	"log"
 	"sync"
+
+	"github.com/delgus/taskmanager"
 )
-
-// Priority - тип для приоритетов
-type Priority int
-
-const (
-	// LowestPriority - самый низкий
-	LowestPriority Priority = 1
-	// LowPriority - низкий
-	LowPriority Priority = 2
-	// MiddlePriority - средний
-	MiddlePriority Priority = 3
-	// HighPriority - высокий
-	HighPriority Priority = 4
-	// HighestPriority - самый высокий
-	HighestPriority Priority = 5
-)
-
-// TaskInterface - интерфейс, который должна реализовывать задача
-type TaskInterface interface {
-	// Priority - метод возвращает приоритет задачи
-	Priority() Priority
-	// Exec - метод, где выполняется сама задача
-	Exec()
-}
-
-// QueueInterface - интерфейс, который должна реализовывать очередь
-type QueueInterface interface {
-	// AddTask - добавить задачу из очереди
-	AddTask(task TaskInterface)
-	// GetTask - получить задачу из очереди
-	GetTask() TaskInterface
-}
 
 // Queue реализует очередь с прироритетом
 type Queue struct {
@@ -44,14 +13,14 @@ type Queue struct {
 }
 
 // AddTask - добавление задач c блокировкой для безопасного добавления в асинхронных потоках
-func (q *Queue) AddTask(task TaskInterface) {
+func (q *Queue) AddTask(task taskmanager.Task) {
 	q.mu.Lock()
 	q.queue.push(task)
 	q.mu.Unlock()
 }
 
 // GetTask - получение задачи из канала очереди с блокировкой для безопасного извлечения в асинхронных потоках
-func (q *Queue) GetTask() TaskInterface {
+func (q *Queue) GetTask() taskmanager.Task {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 	if len(q.queue) > 0 {
@@ -61,16 +30,16 @@ func (q *Queue) GetTask() TaskInterface {
 }
 
 // Слайс для хранения очереди задач
-type queue []TaskInterface
+type queue []taskmanager.Task
 
 // добавление нового элемента, просеиваем двоичную кучу вверх
-func (q *queue) push(t TaskInterface) {
+func (q *queue) push(t taskmanager.Task) {
 	*q = append(*q, t)
 	q.up()
 }
 
 // извлечение элемента с прросеиванием вниз
-func (q *queue) pop() TaskInterface {
+func (q *queue) pop() taskmanager.Task {
 	q.swap(0, len(*q)-1)
 	q.down()
 
@@ -126,26 +95,26 @@ func (q queue) down() {
 
 // Task - стандартная реализации задачи
 type Task struct {
-	EventDispatcherInterface // должна реализовывать интерфейс для работы с событиями
-	priority                 Priority
-	jobHandler               JobHandler
+	events   map[taskmanager.Event][]taskmanager.EventHandler
+	priority taskmanager.Priority
+	handler  TaskHandler
 }
 
-// JobHandler - тип для хэндлера с самой работой
-type JobHandler func() error
+// TaskHandler - тип для хэндлера с самой работой
+type TaskHandler func() error
 
 // NewTask - Конструктор для новой задачи
-func NewTask(priority Priority, handler JobHandler) *Task {
+func NewTask(priority taskmanager.Priority, handler TaskHandler) *Task {
 	task := &Task{
-		EventDispatcherInterface: &EventDispatcher{},
-		priority:                 priority,
-		jobHandler:               handler,
+		events:   make(map[taskmanager.Event][]taskmanager.EventHandler),
+		priority: priority,
+		handler:  handler,
 	}
 	return task
 }
 
 // Priority  - возвращает приоритет задачи
-func (t *Task) Priority() Priority {
+func (t *Task) Priority() taskmanager.Priority {
 	return t.priority
 }
 
@@ -154,14 +123,24 @@ func (t *Task) Priority() Priority {
 // Если задача выполнена неуспешно - вызываем событие FailedEvent
 // Если нужна более гибкая обработка ошибок - реализуем свой Task
 // По окончании задачи, если она прошла успешно вызываем событие AfterExecEvent
-func (t *Task) Exec() {
-	t.EmitEvent(BeforeExecEvent)
-	if err := t.jobHandler(); err != nil {
-		// логируем ошибку
-		log.Println(err)
-		t.EmitEvent(FailedEvent)
-		// прерываем обработку задачи
-		return
+func (t *Task) Exec() error {
+	t.EmitEvent(taskmanager.BeforeExecEvent)
+	if err := t.handler(); err != nil {
+		t.EmitEvent(taskmanager.FailedEvent)
+		return err
 	}
-	t.EmitEvent(AfterExecEvent)
+	t.EmitEvent(taskmanager.AfterExecEvent)
+	return nil
+}
+
+// OnEvent - Функция, которая вешает обработчик на событие
+func (t *Task) OnEvent(event taskmanager.Event, handler taskmanager.EventHandler) {
+	t.events[event] = append(t.events[event], handler)
+}
+
+// EmitEvent вызывает событие, переданное в аргументах
+func (t *Task) EmitEvent(event taskmanager.Event) {
+	for _, h := range t.events[event] {
+		h()
+	}
 }

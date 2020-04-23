@@ -4,13 +4,14 @@ import (
 	"fmt"
 
 	"github.com/delgus/taskmanager"
+	"github.com/delgus/taskmanager/memory"
 )
 
 func main() {
-	tq := new(taskmanager.Queue)
+	tq := new(memory.Queue)
 	//создаем задачи и добавляем в очередь
 	//lowest task
-	lTask := taskmanager.NewTask(taskmanager.LowestPriority, func() error {
+	lTask := memory.NewTask(taskmanager.LowestPriority, func() error {
 		fmt.Println("i lowest! good work!")
 		return nil
 	})
@@ -27,7 +28,7 @@ func main() {
 	tq.AddTask(lTask)
 
 	//highest task
-	hTask := taskmanager.NewTask(taskmanager.HighestPriority, func() error {
+	hTask := memory.NewTask(taskmanager.HighestPriority, func() error {
 		fmt.Println("i highest! good work!")
 		return nil
 	})
@@ -43,7 +44,7 @@ func main() {
 	hTask.EmitEvent(taskmanager.CreatedEvent)
 	tq.AddTask(hTask)
 
-	mTask := taskmanager.NewTask(taskmanager.MiddlePriority, func() error {
+	mTask := memory.NewTask(taskmanager.MiddlePriority, func() error {
 		fmt.Println("i middle! good work!")
 		return nil
 	})
@@ -60,7 +61,7 @@ func main() {
 	tq.AddTask(mTask)
 
 	//broken task
-	bTask := taskmanager.NewTask(taskmanager.HighestPriority, func() error {
+	bTask := memory.NewTask(taskmanager.HighestPriority, func() error {
 		return fmt.Errorf("i broken! sorry(")
 	})
 	bTask.OnEvent(taskmanager.CreatedEvent, func() {

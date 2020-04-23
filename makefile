@@ -9,7 +9,7 @@ lint: ## Lint the files
 	@golangci-lint run
 
 test: ## run unit tests
-	@go test -race -short -coverprofile=coverage.txt
+	@go test ./... -race -short -coverprofile=coverage.txt
 
 bench: ## run tests and benchmarks
 	@go test  -bench=. -benchmem
